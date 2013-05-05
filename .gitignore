@@ -219,13 +219,11 @@ function displayformprofile($dbh)
 
 <tr><td><label for="visiblity" class="label" >Your Visibility</label> </td>
 
-<td><input type="radio" name="visibility" id="visibility" title="Your medical reports will be visible to every service provider and you will start recieveing the quotes" value='a'/>Everyone<input type="radio" name="visibility" id="visibility" value='s' checked="checked" />Selective</td>
+<td><input type="radio" name="visibility" id="visibility"  value='a'/>Everyone<input type="radio" name="visibility" id="visibility" value='s' checked="checked" />Selective</td>
 </tr>
 <tr><td> </td>
 
-<td class="note">Visibility option once set cannot be changed. 
-<ul><li>For Everyone-- Your medical reports will be visible to every service provider and you will start recieveing the quotes. </li>
-<li>For Selective -- You choose who may see your medical profile and send you the quotes. </li> </ul> </td>
+
 </tr>
 <tr><td><label for="age" class="label"> Age</label> </td>
 
