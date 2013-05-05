@@ -1,0 +1,305 @@
+<?php session_start(); ?>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+
+
+<link href="../css/style.css" rel="stylesheet" type="text/css" />
+<link href="../css/menu.css" rel="stylesheet" type="text/css" />
+
+
+  <link href="../css/jq/jquery-ui-1.10.1.custom.min.css" rel="stylesheet" type="text/css" />
+    <script src="http://code.jquery.com/jquery-1.8.2.js"></script>
+    <script src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+ <script type="text/javascript" src="../js/zebra.js"></script>
+	<script language="javascript" type="text/javascript" src="/htravel/js/tinymce/jscripts/tiny_mce/tiny_mce.js">		</script>
+    <script language="javascript" type="text/javascript">
+		tinyMCE.init({
+				theme : "simple",
+				mode : "textareas"
+		});
+    </script>
+    
+    
+<?php include('../include/seo.php');?>
+<?php include ('../include/mobile.php');?>
+
+<?php require_once("../functions/function.php"); ?>
+
+<script>
+    $(function() {
+       
+        $( "#treatmentreqd" ).autocomplete({
+            source: "auto_procedure.php",
+            minLength: 2
+           
+        });
+    });
+    </script>
+
+
+<script>
+    $(function() {
+       
+        $( "#citytreat" ).autocomplete({
+            source: "auto_city.php",
+            minLength: 2
+           
+        });
+    });
+    </script>
+</head>
+
+<body>
+<div id="page">
+<?php  include('../header.php'); ?>
+
+<div id="content">
+ 
+<?php
+if(isset($_SESSION['umid'])){
+	
+	$uid=$_SESSION['umid'];
+	$role=get_usertyperole($dbh,$uid);	
+	if($role->type==1) //checking whether the user is patient or not
+	{	
+	if(get_patient_count($dbh,$uid)>0){ redirect_to('disp_patient.php');}
+	else{	  
+		  if(isset($_POST['docprof']))
+	 		 {
+				// print_r($_POST);
+				 require_once("../include/conn.php");
+	
+				try{
+				$dbh=new PDO($db,$user,$pass);
+				}
+				catch(PDOException $e){ echo $e->getMessage();}
+		  		  addprofile($dbh,$uid);	
+	 		  }
+	  else
+	  {
+			 require_once("../include/conn.php");
+				try{
+					$dbh=new PDO($db,$user,$pass);
+					}
+					catch(PDOException $e){ echo $e->getMessage();}
+			  displayformprofile($dbh);
+		  }
+	} //get_doc_count
+   }//role check
+   else { ?>
+		   <script>
+			  $(document).ready(function() {
+	  
+			  $("#diverror").html('You are not authorized to access this page').show();
+	  
+			  });
+		  </script>
+		   <?php 
+        }//else of role check
+ }else 
+	{
+		   ?>
+		   <script>
+			  $(document).ready(function() {
+	  
+			  $("#diverror").html('You are not authorized to access this page').show();
+	  
+			  });
+		  </script>
+		   <?php
+		  // echo "You are Not authorized to access this page"; 
+	   
+ 	
+ }
+
+
+
+
+
+?>
+<?php
+function addprofile($dbh,$uid)
+{
+	
+	$error=array();
+	$puid=$uid;
+	$name=get_username($dbh,$uid);
+	$sex=trim($_POST['sex']);	
+	$age=trim($_POST['age']);
+	$country=$_POST['country'];
+	$visibility=$_POST['visibility'];
+
+
+	$treatmentreqd=trim($_POST['treatmentreqd']);
+	
+	$city=trim($_POST['city']);
+	
+	$medcond=trim($_POST['medcond']);
+	$citytreat=trim($_POST['citytreat']);
+	$remarks=trim($_POST['remarks']);
+	
+	
+ 
+	if(empty($age)) $error[]="<li>Age cannot be empty </li>";
+	
+	//if(empty($name)) $error[]="<li>Doctor Name cannot be empty  </li>";
+	if(empty($sex)) $error[]="<li>Sex cannot be empty  </li>";
+	if(empty($country)) $error[]="<li>country cannot be empty  </li>";
+	if(empty($medcond)) $error[]="<li>medcond cannot be empty  </li>";
+	if(empty($city)) $error[]="<li> City cannot be empty </li>";
+	
+	
+	
+	if($error) foreach($error as $e) {echo $e;}
+	else
+	{
+		$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+$sql1="insert into patient(puid,name,age,sex,country,city,citytreat,treatmentreqd,medcond,remarks,visibility) values(:puid,:name,:age,:sex,:country,:city,:citytreat,:treatmentreqd,:medcond,:remarks,:visibility)";
+				
+				$st=$dbh->prepare($sql1);
+				$st->execute(
+				array(
+				':puid'=>$puid,
+				':name'=>$name,
+				':age'=>$age,
+				':sex'=>$sex,
+				':country'=>$country,
+				':city'=>$city,
+				':citytreat'=>$citytreat,
+				':treatmentreqd'=>$treatmentreqd,
+				':medcond'=>$medcond,
+				':remarks'=>$remarks,
+				':visibility'=>$visibility				
+				));
+				
+				$row=$st->rowCount();
+				if($row==1){ 			
+					redirect_to('disp_patient.php'); //echo "Saved";
+				
+				} else {
+							
+						 ?>
+						 <script>
+							$(document).ready(function() {
+					
+							$("#diverror").html('Data was not saved !!!').show();
+					
+							});
+						</script>
+						 <?php
+					}
+				
+	}
+	
+}
+?>
+
+
+<?php
+
+function displayformprofile($dbh)
+{
+
+?>
+
+	
+
+
+
+<div class="section">
+<div id="h1"><h1>Patient Profile</h1></div>
+ <table width="100%" class="list">
+<form name="profile" method="post" action="">
+  
+
+<tr><td><label for="visiblity" class="label" >Your Visibility</label> </td>
+
+<td><input type="radio" name="visibility" id="visibility" title="Your medical reports will be visible to every service provider and you will start recieveing the quotes" value='a'/>Everyone<input type="radio" name="visibility" id="visibility" value='s' checked="checked" />Selective</td>
+</tr>
+<tr><td> </td>
+
+<td class="note">Visibility option once set cannot be changed. 
+<ul><li>For Everyone-- Your medical reports will be visible to every service provider and you will start recieveing the quotes. </li>
+<li>For Selective -- You choose who may see your medical profile and send you the quotes. </li> </ul> </td>
+</tr>
+<tr><td><label for="age" class="label"> Age</label> </td>
+
+<td><input type="text" name="age" id="age"  class="req"/><span class="error">Cannot be blank</span></td>
+</tr>      
+     
+<tr><td><label for="sex" class="label"> Sex</label> </td>
+
+<td><input type="radio" name="sex" id="sex" value="M" checked="checked" />Male<input type="radio" value="F" name="sex" id="sex"  />Female</td>
+</tr>
+
+     
+<tr><td><label for="country" class="label"> Country</label> </td>
+
+<td><select name="country">
+	<?php get_country($dbh); ?>
+</select><span class="error">Cannot be blank</span></td>
+</tr>      
+
+<tr><td><label for="city" class="label"> City</label> </td>
+
+<td><input type="text" name="city" id="city"  class="req"/><span class="error">Cannot be blank</span></td>
+</tr>      
+         
+         
+<tr><td><label for="treatmentreqd" class="label"> Treatment Required</label> </td>
+
+<td><input type="text" name="treatmentreqd" id="treatmentreqd"  class="req"/><span class="error">Cannot be blank</span></td>
+</tr>
+
+<tr><td><label for="citytreat" class="label"> City</label> </td>
+
+<td><input type="text" name="citytreat" id="citytreat"  class="req"/><span class="error">Cannot be blank</span></td>
+</tr>      
+  <tr><td> </td>
+
+<td class="note">City in which you want to be treated in India</td>
+</tr>      
+            
+          
+   <tr>
+   <td width="100px"><label for="medcond" class="label">Present Medical Condition</label> </td> 
+   <td width="550px"> <textarea cols="55"  rows="10"     name="medcond" id="medcond"   class="req" /></textarea>
+   <span class="error">Cannot be blank</span></td></tr>
+ 
+  
+            
+   <tr>
+   <td width="100px"><label for="remarks" class="label">Remarks</label> </td> 
+   <td width="550px"> <textarea cols="55"  rows="10"     name="remarks" id="remarks"   class="req" /></textarea>
+   <span class="error">Cannot be blank</span></td></tr>
+ 
+
+    
+     <tr><td colspan="2" class="rowcenter"><button class="mybutton1" type="submit" name="docprof" id="docprof" >Save</button></td></tr>
+    </form>   
+</table>
+   
+
+</div>
+
+
+<?php	
+}
+?>
+
+
+</div> <!-- content-->
+
+
+<aside id="aside"> <?php include('inc_client_sidebar.php'); ?> </aside>
+
+<footer><?php include('../include/footer.php'); ?></footer>
+</div> <!-- page-->
+<script type="text/javascript" src="../js/formcheck.js"></script>
+</body>
+</html>
